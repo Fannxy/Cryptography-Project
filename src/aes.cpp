@@ -6,11 +6,10 @@
 #include <time.h>
 #include <random>
 
+#include "utils.h"
+
 
 using namespace std;
-
-typedef bitset<8> Byte;
-typedef bitset<32> Word;
 
 const int Nr = 10; // Number of rounds.
 const int Nk = 4; // Number of key word length.
@@ -108,13 +107,10 @@ Word Rcon[10] = {0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000,
 
 // declaration
 void TransToState(Byte* Arr, Byte (*State)[Nk]);
-Word BytesToWord(Byte& k1, Byte& k2, Byte& k3, Byte& k4);
-Byte* WordToBytes(Word w);
 Word RotWord(Word w);
 Word SubWord(Word w);
 Byte SubByte(Byte b);
 void KeyExpansion(Byte *key, Word *keywords);
-void GenerateRandomBits(Byte *Arr, int n);
 void PrintState(Byte (*State)[Nk]);
 
 
@@ -132,7 +128,7 @@ void TransToState(Byte* Arr, Byte (*State)[Nk]){
 
 void StateTransback(Byte (*State)[Nk], Byte* Arr){
     /*
-        Trans the 2d State to 1d Message.
+        Trans the 2d State to 1d Message.
     */
     int i = 0;
     for(int j=0; j<Nk; j++){
@@ -140,34 +136,6 @@ void StateTransback(Byte (*State)[Nk], Byte* Arr){
             Arr[i] = State[k][j];
             i += 1;
         }
-    }
-}
-
-
-Word BytesToWord(Byte& k1, Byte& k2, Byte& k3, Byte& k4){
-    Word w;
-    for(int j=0; j<8; j++){
-        w.set(8*3+j, k1[j]);
-        w.set(8*2+j, k2[j]);
-        w.set(8*1+j, k3[j]);
-        w.set(j, k4[j]);
-    }
-    // cout << "here words: " << w.to_string() << endl;
-    return w;
-}
-
-
-void WordToBytes(Word w, Byte* ByteS){
-    Byte tmp;
-    // cout << "check word2bytes" << endl;
-    // cout << w.to_string() << endl;
-
-    int keynum = 3;
-    for(int i=0; i<8; i++){
-        ByteS[0].set(i, w[8*3+i]);
-        ByteS[1].set(i, w[8*2+i]);
-        ByteS[2].set(i, w[8*1+i]);
-        ByteS[3].set(i, w[i]);
     }
 }
 
@@ -303,27 +271,6 @@ void InvShiftRows(Byte (*State)[Nk]){
 }
 
 
-Byte GFMul(Byte a, Byte b) { 
-    /*
-        The multiplication of byte.
-    */
-	Byte p = 0;
-	Byte hi_bit_set;
-	for (int counter = 0; counter < 8; counter++) {
-		if ((b & Byte(1)) != 0) {
-			p ^= a;
-		}
-		hi_bit_set = (Byte) (a & Byte(0x80));
-		a <<= 1;
-		if (hi_bit_set != 0) {
-			a ^= 0x1b; /* x^8 + x^4 + x^3 + x + 1 */
-		}
-		b >>= 1;
-	}
-	return p;
-}
-
-
 void MixColumns(Byte (*State)[Nk]){
     Byte temp;
     Byte arr[Nk] = {};
@@ -372,18 +319,6 @@ void PrintState(Byte (*State)[Nk]){
 }
 
 
-void CharToByte(Byte* Block, char* buffer){
-    bool val;
-    for(int i=0; i<16; i++){
-        for(int j=0; j<8; j++){
-            val = (buffer[i*8+j] == '1') ? 1 : 0;
-            // cout << val << " ";
-            Block[i].set(7-j, val);
-        }
-    }
-}
-
-
 void KeyExpansion(Byte *key, Word *keywords){
     Word temp;
     int i = 0;
@@ -403,28 +338,6 @@ void KeyExpansion(Byte *key, Word *keywords){
 }
 
 
-void GenerateRandomBits(Byte *Arr, int n){
-    /*
-        Used to generate random byte array.
-    */
-    // srand((unsigned)time(NULL));
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    // cout << "seed: " << (time_t)ts.tv_nsec << endl;
-    srand((time_t)ts.tv_nsec);
-
-    default_random_engine generator;
-    uniform_real_distribution<float> distribution(0.0, 1.0);
-    float randNum;
-    bool randBit;
-    for(int i=0; i<n; i++){
-        for(int j=0; j<8; j++){
-            randNum = distribution(generator);
-            randBit = (randNum < 0.5) ? 0 : 1;
-            Arr[i].set(j, randBit);
-        }
-    }
-}
 
 
 void AddRoundKey(Byte (*State)[Nk], Word* key){
@@ -526,11 +439,11 @@ void CBC_AES(){
     Word KeyWords[4*(Nr+1)] = {};
 
     // Generate origional key.
-    GenerateRandomBits(Key, Nl);
+    GenerateRandomBytes(Key, Nl);
     KeyExpansion(Key, KeyWords);
 
     // Generate initial vector.
-    GenerateRandomBits(InitialVector, Nl);
+    GenerateRandomBytes(InitialVector, Nl);
     for(int i=0; i<Nl; i++){
         IVInUse[i] = InitialVector[i];
     }
@@ -539,7 +452,7 @@ void CBC_AES(){
     outfile.open("./test/Message.txt");
     if(outfile.is_open()){
         for(int i=0; i<Nf; i++){
-            GenerateRandomBits(DataBlock, Nl);
+            GenerateRandomBytes(DataBlock, Nl);
             // cout << "Generation" << endl;
             for(int j=0; j<Nl; j++){
                 outfile << DataBlock[j];
@@ -654,8 +567,8 @@ void CBC_AES(){
 
 }
 
-// int main(int, char**){
+int main(int, char**){
 
-//     CBC_AES();
-//     return 0;
-// }
+    CBC_AES();
+    return 0;
+}
