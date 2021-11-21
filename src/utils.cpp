@@ -85,6 +85,7 @@ void CharToByte(Byte* Block, char* buffer){
     }
 }
 
+
 Byte GFMul(Byte a, Byte b) { 
     /*
         The multiplication of byte.

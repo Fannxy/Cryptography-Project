@@ -32,7 +32,7 @@ Word Digest[8] = {
 
 void padding(Byte* Message, Byte* Padded_Message, int M, int P, int N){
     /*
-        Padding the input message m.
+        Padding the input message Message to Padded_Message.
     */
 
     // First part: origional message

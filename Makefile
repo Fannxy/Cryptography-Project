@@ -13,5 +13,10 @@ sha256: ./src/sha256.cpp
 	g++ ./src/sha256.cpp -o ./bin/sha256 ./bin/utils.o
 	./bin/sha256
 
+sha3: ./src/sha3_256.cpp
+	g++ -c ./src/utils.cpp -o ./bin/utils.o
+	g++ ./src/sha3_256.cpp -o ./bin/sha3_256 ./bin/utils.o
+	./bin/sha3_256
+
 clean: 
-	rm -f -r ./bin/* ./test/*
+	rm -f -r ./bin/* ./test/* ./log
