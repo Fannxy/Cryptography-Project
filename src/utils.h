@@ -18,5 +18,6 @@ void GenerateRandomBytes(Byte *Arr, int n);
 void GenerateRandomWords(Word *Arr, int n);
 void CharToByte(Byte* Block, char* buffer);
 Byte GFMul(Byte a, Byte b);
+Word ModTwoAdd(Word x, Word y);
 
 #endif

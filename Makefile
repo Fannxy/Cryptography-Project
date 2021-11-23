@@ -18,5 +18,10 @@ sha3: ./src/sha3_256.cpp
 	g++ ./src/sha3_256.cpp -o ./bin/sha3_256 ./bin/utils.o
 	./bin/sha3_256
 
+sm3: ./src/sm3.cpp
+	g++ -c ./src/utils.cpp -o ./bin/utils.o
+	g++ ./src/sm3.cpp -o ./bin/sm3 ./bin/utils.o
+	./bin/sm3
+
 clean: 
 	rm -f -r ./bin/* ./test/* ./log

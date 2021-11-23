@@ -491,12 +491,6 @@ void CBC_AES(){
 
         // Update iv
         StateTransback(State, DataBlock);
-        
-        // // test datablock ???
-        // for(int j=0; j<16; j++){
-        //     cout << hex << DataBlock[j].to_ulong() << " ";
-        // }
-        // cout << endl;
 
         for(int j=0; j<16; j++){
             IVInUse[j] = DataBlock[j];

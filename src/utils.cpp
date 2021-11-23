@@ -105,3 +105,19 @@ Byte GFMul(Byte a, Byte b) {
 	}
 	return p;
 }
+
+
+Word ModTwoAdd(Word x, Word y){
+    /*
+        Mod 2^n addition.
+    */
+    Word res = x;
+    while(y.any()){
+        Word t = x;
+        x = x^y;
+        y = (t & y) <<  1;
+        res = x;
+    }
+
+    return res;
+}
