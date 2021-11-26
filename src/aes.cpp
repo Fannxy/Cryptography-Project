@@ -8,6 +8,8 @@
 
 #include "utils.h"
 
+// #define DEBUG
+#define FILE
 
 using namespace std;
 
@@ -422,9 +424,8 @@ void decrypt(Byte (*State)[Nk], Word* keywords){
 }
 
 
-void CBC_AES(){
+void CBC_AES_infile(){
 
-    // Byte Message[Nf] = {};
     Byte Key[Nl] = {};
     Byte DataBlock[Nl] = {};
     Byte InitialVector[Nl] = {};
@@ -453,10 +454,8 @@ void CBC_AES(){
     if(outfile.is_open()){
         for(int i=0; i<Nf; i++){
             GenerateRandomBytes(DataBlock, Nl);
-            // cout << "Generation" << endl;
             for(int j=0; j<Nl; j++){
                 outfile << DataBlock[j];
-                // cout << hex << DataBlock[j].to_ulong() << endl;
             }
             outfile << endl;
         }
@@ -561,8 +560,123 @@ void CBC_AES(){
 
 }
 
-int main(int, char**){
+void CBC_AES(){
+    /*
+        CBC mode AES.
+    */
+    Byte Key[Nl] = {};
+    Byte DataBlock[Nl] = {};
+    Byte InitialVector[Nl] = {};
+    Byte IVInUse[Nl] = {};
 
-    CBC_AES();
+    Byte State[Nk][Nk] = {};
+    Word KeyWords[4*(Nr+1)] = {};
+
+    // Generate origional key.
+    GenerateRandomBytes(Key, Nl);
+    KeyExpansion(Key, KeyWords);
+
+    // Generate initial vector.
+    GenerateRandomBytes(InitialVector, Nl);
+    for(int i=0; i<Nl; i++){
+        IVInUse[i] = InitialVector[i];
+    }
+    // CBC Mode
+    float time_e = 0.0;
+    float time_d = 0.0;
+
+    for(int i=0; i<Nf; i++){
+        // Data generation
+        GenerateRandomBytes(DataBlock, Nl);
+        // xor with IV
+        for(int j=0; j<16; j++){
+            DataBlock[j] ^= IVInUse[j];
+        }
+        
+        // Encryption
+        TransToState(DataBlock, State);
+
+        clock_t encryption_begin = clock();
+        encrypt(State, KeyWords);
+        clock_t encryption_end = clock();
+
+        // Update iv
+        StateTransback(State, DataBlock);
+        for(int j=0; j<16; j++){
+            IVInUse[j] = DataBlock[j];
+        }
+        time_e += (encryption_end - encryption_begin) * 1.0 / CLOCKS_PER_SEC;
+
+        // Decryption.
+        TransToState(DataBlock, State);
+        clock_t decryption_begin = clock();
+        decrypt(State, KeyWords);
+        clock_t decryption_end = clock();
+
+        StateTransback(State, DataBlock);
+        // xor with IV.
+        for(int j=0; j<16; j++){
+            DataBlock[j] ^= IVInUse[j];
+        }
+        time_d += (decryption_end - decryption_begin) * 1.0 / CLOCKS_PER_SEC;
+    }
+    time_e = time_e / Nf;
+    time_d = time_d / Nf;
+    cout << "Efficiency of encryption: " << ((128)/time_e)*1e-3 << "Mbps" << endl;
+    cout << "Efficiency of decryption: " << ((128)/time_d)*1e-3 << "Mbps" << endl;
+}
+
+void Test_aes(){
+    Byte Key[16] = {0x2b, 0x7e, 0x15, 0x16, 
+					0x28, 0xae, 0xd2, 0xa6, 
+					0xab, 0xf7, 0x15, 0x88, 
+					0x09, 0xcf, 0x4f, 0x3c};
+    Byte Mess[16] = {0x32, 0x88, 0x31, 0xe0, 
+					0x43, 0x5a, 0x31, 0x37,
+					0xf6, 0x30, 0x98, 0x07,
+					0xa8, 0x8d, 0xa2, 0x34};
+    
+    Byte State[Nk][Nk] = {};
+    Word KeyWords[4*(Nr+1)] = {};
+
+    // encryption
+    KeyExpansion(Key, KeyWords);
+    TransToState(Mess, State);
+    encrypt(State, KeyWords);
+
+    cout << "Origional Message" << endl;
+    for(int i=0; i<16; i++){
+        cout << hex << Mess[i].to_ulong() << " ";
+    }
+    cout << endl;
+
+    StateTransback(State, Mess);
+    cout << "Cipher-text" << endl;
+    for(int i=0; i<16; i++){
+        cout << hex << Mess[i].to_ulong() << " ";
+    }
+    cout << endl;
+
+    // decryption
+    TransToState(Mess, State);
+    decrypt(State, KeyWords);
+    StateTransback(State, Mess);
+    cout << "Decrypted Plain-text" << endl;
+    for(int i=0; i<16; i++){
+        cout << hex << Mess[i].to_ulong() << " ";
+    }
+    cout << endl;
+}
+
+int main(int, char**){
+    
+    #ifdef DEBUG
+        Test_aes();
+    #endif
+
+    #ifndef DEBUG
+        CBC_AES();
+    #endif
+
     return 0;
 }

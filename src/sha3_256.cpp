@@ -10,7 +10,16 @@
 
 using namespace std;
 
-const int M = 0, r = 136, c = 64;
+#define DEBUG
+
+#ifdef DEBUG
+    const int M = 0;
+#endif
+#ifndef DEBUG
+    const int M = 1056768;
+#endif
+
+const int r = 136, c = 64;
 const int N = floor(M/r) + 1;
 const int W = 8;
 const int l = 6;
@@ -224,38 +233,43 @@ void keccakF(Byte* State, int nr){
 
 
 int main(int, char**){
-    // int M = 0, r = 136, c = 64;
-    // int N = floor(M/r) + 1;
-    // const int W = 8;
     int nr = 12 + 2*l;
     int d = 256;
 
-    Byte Message[M];
-    Byte Padded_Message[N*r];
+    #ifdef DEBUG
+        Byte Message[M];
+    #endif
 
+    #ifndef DEBUG
+        string mess = ReadFileToString("./test/Message.txt");
+        Byte Message[(int)mess.size()];
+        StringToBytes(mess, Message);
+    #endif
+    cout << "Message length = " << M << endl;
+
+    Byte Padded_Message[N*r];
     Byte State[5*5*W];
     padding(Message, Padded_Message, r);
-
-
     InitState(State);
 
+    clock_t time_begin = clock();
     // sponge stage.
     for(int t=0; t<N; t++){
         // the beginning message block for this round.
         Byte roundMessage[r+c];
         for(int i=0; i<r; i++){
-            roundMessage[i] = Padded_Message[t*N+i];
+            roundMessage[i] = Padded_Message[r*N+i];
         }
         for(int i=r; i<c; i++){
             roundMessage[i] = 0x00;
         }
-
         // XOR the input message with the State.
         for(int i=0; i<5*5*W; i++){
             State[i] = State[i] ^ roundMessage[i];
         }
         keccakF(State, nr);
     }
+    clock_t time_end = clock();
 
     // generate stage.
     string Z = "";
@@ -267,6 +281,7 @@ int main(int, char**){
     }
 
     cout << "Final result: " << Z.substr(0, d) << endl;
+    cout << "All time: " << ((time_end - time_begin)*1.0 / CLOCKS_PER_SEC) << "s"<< endl;
 
     return 0;
 }

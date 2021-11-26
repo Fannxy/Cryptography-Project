@@ -19,5 +19,7 @@ void GenerateRandomWords(Word *Arr, int n);
 void CharToByte(Byte* Block, char* buffer);
 Byte GFMul(Byte a, Byte b);
 Word ModTwoAdd(Word x, Word y);
+std::string ReadFileToString(std::string path);
+void StringToBytes(std::string Mess, Byte* Message);
 
 #endif

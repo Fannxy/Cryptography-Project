@@ -8,9 +8,12 @@
 
 using namespace std;
 
+// #define DEBUG
+
 const int Nr = 32;
 const int Nk = 4;
 const int Nl = 16;
+const int Nf = 8192;
 
 Word FK[4] = {
     0xa3b1bac6, 0x56aa3350, 0x677d9197, 0xb27022dc
@@ -194,8 +197,8 @@ void Decryption(Word* CipherText, Word* Keywords, Word* Message){
     }
 }
 
-int main(int, char**){
-    
+
+void TEST_SM4(){
     Word Key[Nk] = {0x01234567, 0x89ABCDEF, 0xFEDCBA98, 0x76543210};
     Word Messages[Nk] = {0x01234567, 0x89ABCDEF, 0xFEDCBA98, 0x76543210};
     Word Keywords[Nr] = {};
@@ -207,14 +210,74 @@ int main(int, char**){
     Encryption(Messages, Keywords, CipherText);
     cout << "Cipher Text: " << endl;
     for(int i=0; i<Nk; i++){
-        cout << "cipher" << i << ": "<< hex << CipherText[i].to_ulong() << endl;
+        cout <<  hex << CipherText[i].to_ulong() << " ";
     }
+    cout << endl;
 
     Decryption(CipherText, Keywords, Messages);
     cout << "Decrypted Text: " << endl;
     for(int i=0; i<Nk; i++){
-        cout << "plain" << i << ": "<< hex << Messages[i].to_ulong() << endl;
+        cout << hex << Messages[i].to_ulong() << " ";
     }
+    cout << endl;
+}
+
+void SM4_CBC(){
+    /*
+        SM4 in CBC mode.
+    */
+    Word Key[Nk] = {};
+    Word Messages[Nk] = {};
+    Word Keywords[Nr] = {};
+    Word CipherText[Nk] = {};
+    Word InitialVector[Nk] = {};
+    Word IVInUse[Nk] = {};
+
+    // Generate key
+    GenerateRandomWords(Key, Nk);
+    KeyExpansion(Key, Keywords);
+
+    // Generate initial vector
+    GenerateRandomWords(InitialVector, Nk);
+    for(int i=0; i<Nk; i++){
+        IVInUse[i] = InitialVector[i];
+    }
+
+    // CBC Mode
+    float time_e = 0.0;
+    float time_d = 0.0;
+    for(int i=0; i<Nf; i++){
+        GenerateRandomWords(Messages, Nk);
+        for(int j=0; j<Nk; j++){
+            Messages[j] ^= IVInUse[j];
+        }
+
+        clock_t encryption_begin = clock();
+        Encryption(Messages, Keywords, CipherText);
+        clock_t encryption_end = clock();
+
+        clock_t decryption_begin = clock();
+        Decryption(CipherText, Keywords, Messages);
+        clock_t decryption_end = clock();
+
+        time_e += (encryption_end - encryption_begin) * 1.0 / CLOCKS_PER_SEC;
+        time_d += (decryption_end - decryption_begin) * 1.0 / CLOCKS_PER_SEC;
+    }
+    time_e = time_e / Nf;
+    time_d = time_d / Nf;
+    cout << "Efficiency of encryption: " << ((128)/time_e)*1e-3 << "Mbps" << endl;
+    cout << "Efficiency of decryption: " << ((128)/time_d)*1e-3 << "Mbps" << endl;
+}
+
+int main(int, char**){
+    
+    #ifdef DEBUG
+        TEST_SM4();
+    #endif
+
+    #ifndef DEBUG
+        SM4_CBC();
+    #endif
 
     return 0;
 }

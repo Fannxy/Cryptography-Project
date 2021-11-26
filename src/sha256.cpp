@@ -9,6 +9,8 @@
 
 #include "utils.h"
 
+// #define DEBUG
+
 using namespace std;
 
 Word k_words[64] = {
@@ -63,13 +65,13 @@ void padding(Byte* Message, Byte* Padded_Message, int M, int P, int N){
 }
 
 
-void StringToBytes(string Mess, Byte* Message){
-    int S_size = Mess.size();
-    // Byte Message[S_size];
-    for(int i=0; i<S_size; i++){
-        Message[i] = Mess.c_str()[i];
-    }
-}
+// void StringToBytes(string Mess, Byte* Message){
+//     int S_size = Mess.size();
+//     // Byte Message[S_size];
+//     for(int i=0; i<S_size; i++){
+//         Message[i] = Mess.c_str()[i];
+//     }
+// }
 
 
 Word RightRotate(Word& x, int n){
@@ -140,10 +142,17 @@ Word SigmaTrans1(Word& x){
 
 
 int main(int, char**){
+    #ifdef DEBUG
+        string mess = "abc";
+    #endif
 
-    string mess = "abc";
+    #ifndef DEBUG
+        string path = "./test/Message.txt";
+        string mess = ReadFileToString(path);
+    #endif
 
     int M = mess.size();
+    cout << "Message Length = " << M << endl;
     Byte Message[M];
     StringToBytes(mess, Message);
   
@@ -159,6 +168,7 @@ int main(int, char**){
         }
     }
 
+    clock_t time_begin = clock();
     for(int i=0; i<N; i++){
         // Prepare the message schedule.
         Word MessageSchedule[64] = {};
@@ -179,9 +189,6 @@ int main(int, char**){
         // Update working digest.
         Word a = Digest[0], b = Digest[1], c = Digest[2], d = Digest[3], e = Digest[4], f = Digest[5], g = Digest[6], h = Digest[7];
         Word T1, T2;
-        // cout << "init working variable " << endl;
-        // cout << "A: " << hex << a.to_ulong() << endl;
-        // cout << "H: " << hex << h.to_ulong() << endl;
 
         Word LastHash[8] = {};
         for(int j=0; j<8; j++){
@@ -221,12 +228,15 @@ int main(int, char**){
         Digest[6] = ModTwoAdd(g, LastHash[6]);
         Digest[7] = ModTwoAdd(h, LastHash[7]);
     }
+    clock_t time_end = clock();
 
     cout << "Final digest" << endl;
     for(int i=0; i<8; i++){
         cout << hex << Digest[i].to_ulong() << " ";
     }
     cout << endl;
+
+    cout << "All time: " << ((time_end - time_begin)*1.0 / CLOCKS_PER_SEC) << "s"<< endl;
 
     return 0;
 }

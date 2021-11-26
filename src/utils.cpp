@@ -121,3 +121,24 @@ Word ModTwoAdd(Word x, Word y){
 
     return res;
 }
+
+
+string ReadFileToString(string path){
+    /*
+        Load file's coonstant to string.
+    */
+   ifstream input_file(path);
+   if(!input_file.is_open()){
+       cerr << "load fiile error" << endl;
+       exit(EXIT_FAILURE);
+   }
+   return string((istreambuf_iterator<char>(input_file)), istreambuf_iterator<char>());
+}
+
+void StringToBytes(string Mess, Byte* Message){
+    int S_size = Mess.size();
+    // Byte Message[S_size];
+    for(int i=0; i<S_size; i++){
+        Message[i] = Mess.c_str()[i];
+    }
+}

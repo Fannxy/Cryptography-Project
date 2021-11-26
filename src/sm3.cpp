@@ -8,6 +8,8 @@
 #include <math.h>
 #include "utils.h"
 
+// #define DEBUG
+
 using namespace std;
 
 const int padLen = 448;
@@ -100,15 +102,20 @@ void padding(string mess, int l, int k, Word* Message, int n){
     /*
         sm4 padding.
     */
+   replace(mess.begin(), mess.end(), '\n', '0');
    mess += "1";
    for(int i=0; i<k; i++){
        mess += "0";
    }
    bitset<64> linfo = l;
    mess += linfo.to_string();
+//    mess.erase(remove(mess.begin(), mess.end(), '\n'), mess.end());
+//    cout << "mess: " << mess << endl;
 
    for(int i=0; i<n; i++){
+    //    cout << "i = " << i << endl;
        Message[i] = (Word) mess.substr(i*32, (i+1)*32);
+    //    cout << mess.substr(i*32, (i+1)*32) << endl;
    }
 }
 
@@ -209,17 +216,32 @@ void CF(Word* v, Word* MessBlock, int i, Word* NewV){
 
 
 int main(int, char**){
-    string message = "011000010110001001100011";
+
+    #ifdef DEBUG
+        string message = "011000010110001001100011";
+    #endif
+
+    #ifndef DEBUG
+        string path = "./test/Message.txt";
+        string message = ReadFileToString(path);
+    #endif
+
     int l = message.size();
+    cout << "message length: " << l << endl;
     int n = (ceil((l+1-padLen) / padAll) > 0) ? floor((l+1-padLen) / padAll) + 1 : 0;
     int k = n*padAll + padLen - (l + 1);
     n = ((l+1)+k+64) / 32;
     int N = (l+k+65) / 512;
-
+    cout << "N = " << N << endl;
+    cout << "n = " << n << endl;
     Word Message[n];
+
+    clock_t time_begin_padding = clock();
     padding(message, l, k, Message, n);
+    clock_t time_after_padding = clock();
 
     Word newV[8];
+    clock_t time_begin = clock();
     for(int i=0; i<N; i++){
         Word MessBlock[16];
         for(int j=0; j<16; j++){
@@ -230,9 +252,14 @@ int main(int, char**){
             IV[j] = newV[j];
         }
     }
+    clock_t time_end = clock();
+
     cout << "Final v: " << endl;
     for(int i=0; i<8; i++){
         cout << hex << newV[i].to_ulong() << " ";
     }
     cout << endl;
+
+    cout << "Padding time: " << (time_after_padding - time_begin_padding)*1.0 / CLOCKS_PER_SEC << endl;
+    cout << "SM3 time: " << (time_end - time_begin)*1.0 / CLOCKS_PER_SEC << endl;
 }
